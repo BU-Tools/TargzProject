@@ -6,7 +6,7 @@ import sys # error handling
 
 
 url = "https://github.com/apollo-lhc/SM_ZYNQ_FW/releases/download/v1.4.2/SD_p2.tar.gz"
-response = request.urlopen(url) # download file to response
+response = request.urlopen(url)
 
 print("Response code: ", response.getcode())
 print("Downloaded: ", response.info().get_filename())
@@ -20,7 +20,7 @@ with response as r:
 
     while True:
         command = input("\nEnter a command (type help for list of commands): ")
-        command = command.strip() # trim the input
+        command = command.strip()
         if (command == 'quit'):
             break
         elif (command == 'help'):
@@ -42,7 +42,7 @@ with response as r:
                 fileMember = tar.extractfile(filepath)
                 with fileMember as f:
                     lines = [line.decode('utf-8').rstrip() for line in f]
-                print(lines, sep='\n')
+                print(*lines, sep='\n')
             except KeyError:
                 print("Invalide file path")
             except:
