@@ -50,7 +50,7 @@ with response as r:
         elif (command == 'extractFile'):
             try: 
                 filepath = input("Enter a file path: ")
-                tar.extract(filepath)
+                tar.extract(filepath, numeric_owner=True)
             except KeyError:
                 print("Invalide file path")
             except:
