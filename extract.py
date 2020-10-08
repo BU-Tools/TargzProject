@@ -9,8 +9,6 @@ from argparse import RawTextHelpFormatter
 
 
 
-
-
 def main():
     parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
     parser.add_argument('-boot', type=str,
@@ -27,7 +25,7 @@ def main():
                         help='version of BOOT.BIN, image.ub, and SD_p2.tar.gz, ignored when source is local directory')
     parser.add_argument('-zynq', type=str, 
                         default='v1.4.2',
-                        help='zynq of BOOT.BIN and image.ub, ignored when source is local directory')
+                        help='zynq version of BOOT.BIN and image.ub, ignored when source is local directory')
     parser.add_argument('-dir', type=str, 
                         default='./',
                         help='directory which the files will be written to\ntar.gz files will be written to DIR, BOOT.BIN and image.ub will be written to DIR/fw')
@@ -56,26 +54,34 @@ def getFiles(args):
         with res as r:
             bootF = io.BytesIO(r.read()) 
     else:
-
+        with open(bootSource, 'r') as boot:
+            bootF = io.BytesIO(boot.read()) 
 
     if (isWeb(imageSource)):
         res = request.urlopen(bootSource+'download/v'+version+'/image.ub'+zynq)
         with res as r:
             imageF = io.BytesIO(r.read()) 
     else:
-
+        with open(imageSource, 'r') as image:
+            imageF = io.BytesIO(image.read())
 
     if (isWeb(tarSource)):
         res = request.urlopen(bootSource+'download/v'+version+'/SD_p2.tar.gz')
         with res as r:
             tarF = io.BytesIO(r.read()) 
     else:
-
-
-
+        with open(tarSource, 'r') as tar:
+            tarF = io.BytesIO(tar.read())
 
 def writeFiles(dir):
+    dirFw = dir + '/fw'
 
+    with open(dirFw, 'w') as d:
+        d.write(bootF)
+        d.write(imageF)
+
+    tar = tarfile.open(fileobj=tarF, mode='r:gz')
+    tar.extractall(dir, numeric_owner=True)
 
 
 
