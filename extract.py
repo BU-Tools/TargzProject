@@ -1,7 +1,81 @@
+#!/user/bin/env python3
 from urllib import request # request for targz file
 import tarfile # open tar file
 import io # bytesIO object
 import sys # error handling
+
+import argparse
+from argparse import RawTextHelpFormatter
+
+
+
+
+
+def main():
+    parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
+    parser.add_argument('-boot', type=str,
+                        default='https://github.com/apollo-lhc/SM_ZYNQ_FW/releases/',
+                        help='source for BOOT.BIN, can be url (start with https://) or local directory (start with / or ./)\ndefault: https://github.com/apollo-lhc/SM_ZYNQ_FW/releases/')
+    parser.add_argument('-image', type=str,
+                        default='https://github.com/apollo-lhc/SM_ZYNQ_FW/releases/',
+                        help='source for image.ub, can be url (start with https://) or local directory (start with / or ./)\ndefault: https://github.com/apollo-lhc/SM_ZYNQ_FW/releases/')
+    parser.add_argument('-tar', type=str,
+                        default='https://github.com/apollo-lhc/SM_ZYNQ_FW/releases/',
+                        help='source for SD_p2.tar.gz, can be url (start with https://) or local directory (start with / or ./)\ndefault: https://github.com/apollo-lhc/SM_ZYNQ_FW/releases/')
+    parser.add_argument('-ver', type=str, 
+                        default='v1.4.2',
+                        help='version of BOOT.BIN, image.ub, and SD_p2.tar.gz, ignored when source is local directory')
+    parser.add_argument('-zynq', type=str, 
+                        default='v1.4.2',
+                        help='zynq of BOOT.BIN and image.ub, ignored when source is local directory')
+    parser.add_argument('-dir', type=str, 
+                        default='./',
+                        help='directory which the files will be written to\ntar.gz files will be written to DIR, BOOT.BIN and image.ub will be written to DIR/fw')
+
+    args = parser.parse_args()
+    print(args.boot, args.image, args.tar, args.ver, args.dir, sep='\n')
+
+    getFiles(args)
+    writeFiles(args.dir)
+
+def isWeb(str):
+    return str.startsWith("https://")
+
+def getFiles(args):
+    bootSource = args.boot.strip()
+    imageSource = args.image.strip()
+    tarSource = args.tar.strip()
+    version = args.ver.strip()
+    zynq = args.zynq.strip()
+
+    if zynq:
+        zynq = '.' + zynq
+
+    if (isWeb(bootSource)):
+        res = request.urlopen(bootSource+'download/v'+version+'/BOOT.BIN'+zynq)
+        with res as r:
+            bootF = io.BytesIO(r.read()) 
+    else:
+
+
+    if (isWeb(imageSource)):
+        res = request.urlopen(bootSource+'download/v'+version+'/image.ub'+zynq)
+        with res as r:
+            imageF = io.BytesIO(r.read()) 
+    else:
+
+
+    if (isWeb(tarSource)):
+        res = request.urlopen(bootSource+'download/v'+version+'/SD_p2.tar.gz')
+        with res as r:
+            tarF = io.BytesIO(r.read()) 
+    else:
+
+
+
+
+def writeFiles(dir):
+
 
 
 
@@ -60,3 +134,8 @@ with response as r:
     
 
     tar.close()
+
+
+
+if __name__ == '__main__':
+    main()
