@@ -53,7 +53,7 @@ def getFiles(args):
     global bootF
     try: 
         if (isWeb(bootSource)):
-            bootUrl = bootSource+'download/'+version+'/BOOT.BIN'+zynq
+            bootUrl = os.path.join(bootSource, 'download', version, 'BOOT.BIN') + zynq
             print("Downloading BOOT.BIN from", bootUrl)
             res = request.urlopen(bootUrl)
             with res as r:
@@ -68,7 +68,7 @@ def getFiles(args):
     global imageF
     try:
         if (isWeb(imageSource)):
-            imageUrl = imageSource+'download/'+version+'/image.ub'+zynq
+            imageUrl = os.path.join(imageSource, 'download', version, 'image.ub') + zynq
             print("Downloading image.ub from", imageUrl)
             res = request.urlopen(imageUrl)
             with res as r:
@@ -83,7 +83,7 @@ def getFiles(args):
     global tarF
     try:
         if (isWeb(tarSource)):
-            tarUrl = tarSource+'download/'+version+'/SD_p2.tar.gz'+zynq
+            tarUrl = os.path.join(tarSource, 'download', version, 'SD_p2.tar.gz') + zynq
             print("Downloading SD_p2.tar.gz from", tarUrl)
             res = request.urlopen(tarUrl)
             with res as r:
@@ -99,16 +99,18 @@ def writeFiles(dir):
     if not os.path.exists(dir):
         os.makedirs(dir)
 
-    dirFw = dir + 'fw/'
+    dirFw = os.path.join(dir, 'fw')
     if not os.path.exists(dirFw):
         os.makedirs(dirFw)
 
-    print('Writing BOOT.BIN to ', dirFw + 'BOOT.BIN')
-    with open(dirFw + 'BOOT.BIN', 'wb') as boot:
+    dirBoot = os.path.join(dirFw, 'BOOT.BIN')
+    print('Writing BOOT.BIN to ', dirBoot)
+    with open(dirBoot, 'wb') as boot:
         boot.write(bootF.read())
 
-    print('Writing image.ub to ', dirFw + 'image.ub')
-    with open(dirFw + 'image.ub', 'wb') as image:
+    dirImage = os.path.join(dirFw, 'image.ub')
+    print('Writing image.ub to ', dirImage)
+    with open(dirImage, 'wb') as image:
         image.write(imageF.read())
 
     print('Extracting SD_p2.tar.gz to ', dirFw)
