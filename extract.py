@@ -31,11 +31,14 @@ def main():
 
     args = parser.parse_args()
 
-    getFiles(args)
-    writeFiles(args.dir)
+    try:
+        getFiles(args)
+        writeFiles(args.dir)
+    except Exception as error:
+        print(error.args)
 
 def isWeb(x):
-    return x.startswith('https://')
+    return (x.startswith('https://') or x.startswith('http://'))
 
 def getFiles(args):
     bootSource = args.boot.strip()
@@ -48,44 +51,55 @@ def getFiles(args):
         zynq = '.' + zynq
 
     global bootF
-    if (isWeb(bootSource)):
-        bootUrl = bootSource+'download/'+version+'/BOOT.BIN'+zynq
-        print("Downloading BOOT.BIN from", bootUrl)
-        res = request.urlopen(bootUrl)
-        with res as r:
-            bootF = io.BytesIO(r.read())
-    else:
-        print("Loading BOOT.BIN from", bootSource)
-        with open(bootSource, mode='rb') as boot:
-            bootF = io.BytesIO(boot.read())
+    try: 
+        if (isWeb(bootSource)):
+            bootUrl = bootSource+'download/'+version+'/BOOT.BIN'+zynq
+            print("Downloading BOOT.BIN from", bootUrl)
+            res = request.urlopen(bootUrl)
+            with res as r:
+                bootF = io.BytesIO(r.read())
+        else:
+            print("Loading BOOT.BIN from", bootSource)
+            with open(bootSource, mode='rb') as boot:
+                bootF = io.BytesIO(boot.read())
+    except:
+        raise Exception('Invalid BOOT.BIN source')
 
     global imageF
-    if (isWeb(imageSource)):
-        imageUrl = imageSource+'download/'+version+'/image.ub'+zynq
-        print("Downloading image.ub from", imageUrl)
-        res = request.urlopen(imageUrl)
-        with res as r:
-            imageF = io.BytesIO(r.read())
-    else:
-        print("Loading image.ub from", imageSource)
-        with open(imageSource, mode='rb') as image:
-            imageF = io.BytesIO(image.read())
+    try:
+        if (isWeb(imageSource)):
+            imageUrl = imageSource+'download/'+version+'/image.ub'+zynq
+            print("Downloading image.ub from", imageUrl)
+            res = request.urlopen(imageUrl)
+            with res as r:
+                imageF = io.BytesIO(r.read())
+        else:
+            print("Loading image.ub from", imageSource)
+            with open(imageSource, mode='rb') as image:
+                imageF = io.BytesIO(image.read())
+    except:
+        raise Exception('Invalid image.ub source')
 
     global tarF
-    if (isWeb(tarSource)):
-        tarUrl = tarSource+'download/'+version+'/SD_p2.tar.gz'+zynq
-        print("Downloading SD_p2.tar.gz from", tarUrl)
-        res = request.urlopen(tarUrl)
-        with res as r:
-            tarF = io.BytesIO(r.read())
-    else:
-        print("Loading SD_p2.tar.gz from", tarSource)
-        with open(tarSource, mode='rb') as tar:
-            tarF = io.BytesIO(tar.read())
+    try:
+        if (isWeb(tarSource)):
+            tarUrl = tarSource+'download/'+version+'/SD_p2.tar.gz'+zynq
+            print("Downloading SD_p2.tar.gz from", tarUrl)
+            res = request.urlopen(tarUrl)
+            with res as r:
+                tarF = io.BytesIO(r.read())
+        else:
+            print("Loading SD_p2.tar.gz from", tarSource)
+            with open(tarSource, mode='rb') as tar:
+                tarF = io.BytesIO(tar.read())
+    except:
+        raise Exception('Invalid SD_p2.tar.gz source')
 
 def writeFiles(dir):
-    dirFw = dir + 'fw/'
+    if not os.path.exists(dir):
+        os.makedirs(dir)
 
+    dirFw = dir + 'fw/'
     if not os.path.exists(dirFw):
         os.makedirs(dirFw)
 
