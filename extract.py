@@ -1,14 +1,19 @@
 #!/usr/bin/python3
-from urllib import request # request for targz file
 import tarfile # open tar file
 import io # bytesIO object
 import sys # error handling
-import os
+import os # path join
 import argparse # parse arguments
-from argparse import RawTextHelpFormatter #change parser display
+from argparse import RawTextHelpFormatter # change parser display
+from tqdm import tqdm # progress bar
+import requests # http request
 
 
 def main():
+    # check root privilege
+    if os.geteuid() != 0:
+        exit("You need to have root privileges to run this script.")
+
     parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
     parser.add_argument('-boot', type=str,
                         default='https://github.com/apollo-lhc/SM_ZYNQ_FW/releases/',
@@ -38,7 +43,30 @@ def main():
         print(error.args)
 
 def isWeb(x):
+    # chech whether the string x is a url or not
     return (x.startswith('https://') or x.startswith('http://'))
+
+def tqdmDownload(url):
+    # dowload file from url using requests and display progress bar with tqdm
+    try:
+        response = requests.get(url, stream=True)
+        total_size_in_bytes= int(response.headers.get('content-length', 0))
+        block_size = 1024
+        progress_bar = tqdm(total=total_size_in_bytes, bar_format='{l_bar}{bar:50}{r_bar}', unit='iB', unit_scale=True)
+        buffer = io.BytesIO()
+        for data in response.iter_content(block_size):
+            progress_bar.update(len(data))
+            buffer.write(data)
+        progress_bar.close()
+        
+        if total_size_in_bytes != 0 and progress_bar.n != total_size_in_bytes:
+            print('Error: failed to download')
+            raise RuntimeError('failed to download')
+        else:
+            buffer.seek(0)
+            return buffer
+    except:
+        raise
 
 def getFiles(args):
     bootSource = args.boot.strip()
@@ -55,67 +83,64 @@ def getFiles(args):
         if (isWeb(bootSource)):
             bootUrl = os.path.join(bootSource, 'download', version, 'BOOT.BIN') + zynq
             print("Downloading BOOT.BIN from", bootUrl)
-            res = request.urlopen(bootUrl)
-            with res as r:
-                bootF = io.BytesIO(r.read())
+            bootF = tqdmDownload(bootUrl)
         else:
             print("Loading BOOT.BIN from", bootSource)
             with open(bootSource, mode='rb') as boot:
                 bootF = io.BytesIO(boot.read())
     except:
-        raise Exception('Invalid BOOT.BIN source')
+        print('Error: invalid BOOT.BIN source or failed to load BOOT.BIN')
+        raise
 
     global imageF
     try:
         if (isWeb(imageSource)):
             imageUrl = os.path.join(imageSource, 'download', version, 'image.ub') + zynq
             print("Downloading image.ub from", imageUrl)
-            res = request.urlopen(imageUrl)
-            with res as r:
-                imageF = io.BytesIO(r.read())
+            imageF = tqdmDownload(imageUrl)
         else:
             print("Loading image.ub from", imageSource)
             with open(imageSource, mode='rb') as image:
                 imageF = io.BytesIO(image.read())
     except:
-        raise Exception('Invalid image.ub source')
+        print('Error: invalid image.ub source or failed to load image.ub')
+        raise
 
     global tarF
     try:
         if (isWeb(tarSource)):
             tarUrl = os.path.join(tarSource, 'download', version, 'SD_p2.tar.gz') + zynq
             print("Downloading SD_p2.tar.gz from", tarUrl)
-            res = request.urlopen(tarUrl)
-            with res as r:
-                tarF = io.BytesIO(r.read())
+            tarF = tqdmDownload(tarUrl)
         else:
             print("Loading SD_p2.tar.gz from", tarSource)
             with open(tarSource, mode='rb') as tar:
                 tarF = io.BytesIO(tar.read())
     except:
-        raise Exception('Invalid SD_p2.tar.gz source')
+        print('Error: invalid SD_p2.tar.gz source or failed to load SD_p2.tar.gz')
+        raise
 
-def writeFiles(dir):
-    if not os.path.exists(dir):
-        os.makedirs(dir)
+def writeFiles(targetDir):
+    if not os.path.exists(targetDir):
+        os.makedirs(targetDir)
 
-    dirFw = os.path.join(dir, 'fw')
+    dirFw = os.path.join(targetDir, 'fw')
     if not os.path.exists(dirFw):
         os.makedirs(dirFw)
 
     dirBoot = os.path.join(dirFw, 'BOOT.BIN')
-    print('Writing BOOT.BIN to ', dirBoot)
+    print('Writing BOOT.BIN to', dirBoot)
     with open(dirBoot, 'wb') as boot:
         boot.write(bootF.read())
 
     dirImage = os.path.join(dirFw, 'image.ub')
-    print('Writing image.ub to ', dirImage)
+    print('Writing image.ub to', dirImage)
     with open(dirImage, 'wb') as image:
         image.write(imageF.read())
 
-    print('Extracting SD_p2.tar.gz to ', dirFw)
+    print('Extracting SD_p2.tar.gz to', targetDir)
     tar = tarfile.open(fileobj=tarF, mode='r:gz')
-    tar.extractall(dir, numeric_owner=True)
+    tar.extractall(targetDir, numeric_owner=True)
 
 if __name__ == '__main__':
     main()
