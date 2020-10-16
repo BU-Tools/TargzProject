@@ -10,6 +10,10 @@ import requests # http request
 
 
 def main():
+    # check root privilege
+    if os.geteuid() != 0:
+        exit("You need to have root privileges to run this script.")
+
     parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
     parser.add_argument('-boot', type=str,
                         default='https://github.com/apollo-lhc/SM_ZYNQ_FW/releases/',
